@@ -5,11 +5,11 @@ A collection of STL-based implementations of fundamental data structures written
 The goal of this repository is to explore low-level aspects of C++ programming:
 - manual memory management,
 - object lifetime,
-- RAII,
 - move semantics,
 - exception safety,
 - generic programming,
 - STL-like interfaces and design principles.
+- compile-time evaluation
 
 ## Implemented Structures
 
@@ -17,9 +17,9 @@ The goal of this repository is to explore low-level aspects of C++ programming:
 
 - `my_vector`
   - dynamic array implementation similar to `std::vector`
-  - manual memory allocation
-  - copy/move semantics
-  - exception-safe reallocation
-  - STL-compatible type aliases
-
-More structures will be added over time.
+  - manual memory management using raw allocation and placement `new`
+  - copy/move semantics (Rule of Five)
+  - exception-safe construction and reallocation
+  - STL-compatible type aliases (`value_type`, `size_type`, `iterator`, `reference`, etc.)
+  - iterator support, including reverse iterators
+  - some operations with constexpr support where applicable
