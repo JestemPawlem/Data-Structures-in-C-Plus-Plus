@@ -40,13 +40,31 @@ private:
 	}
 
 public:
-	my_vector()
-		: data_(nullptr), capacity_(10), size_(0)
+	constexpr my_vector() noexcept
+		: data_(nullptr), capacity_(0), size_(0)
+	{}
+
+	my_vector(size_type count)
+		: data_(nullptr), capacity_(count), size_(count)
 	{
 		data_ = static_cast<pointer>(::operator new(sizeof(value_type) * capacity_));
+
+		size_type i{};
+		try
+		{
+			for (; i < size_; ++i)
+				::new (data_ + i) value_type();
+		}
+		catch (...)
+		{
+			for (size_t j{}; j < i; ++j)
+				data_[j].~value_type();
+			::operator delete(data_);
+			throw;
+		}
 	}
 
-	my_vector(size_type count, const_reference value = value_type())
+	my_vector(size_type count, const_reference value)
 		: data_(nullptr), capacity_(count), size_(count)
 	{
 		data_ = static_cast<pointer>(::operator new(sizeof(value_type) * capacity_));
@@ -85,7 +103,7 @@ public:
 		}
 	}
 
-	my_vector(my_vector&& other) noexcept
+	constexpr my_vector(my_vector&& other) noexcept
 		: data_(other.data_), capacity_(other.capacity_), size_(other.size_)
 	{
 		other.data_ = nullptr;
@@ -133,6 +151,8 @@ public:
 		return *this;
 	}
 
+
+
 	reference operator[](size_type index)
 	{
 		return data_[index];
@@ -159,19 +179,183 @@ public:
 		return data_[index];
 	}
 
-	size_type size() const noexcept
+	constexpr reference front()
+	{
+		return *data_;
+	}
+
+	constexpr const_reference front() const
+	{
+		return *data_;
+	}
+
+	reference back()
+	{
+		return *(data_ + size_ - 1);
+	}
+
+	const_reference back() const
+	{
+		return *(data_ + size_ - 1);
+	}
+
+	constexpr pointer data() noexcept
+	{
+		return data_;
+	}
+
+	constexpr const_pointer data() const noexcept
+	{
+		return data_;
+	}
+
+
+
+	constexpr iterator begin() noexcept
+	{
+		return data_;
+	}
+
+	constexpr const_iterator begin() const noexcept
+	{
+		return data_;
+	}
+
+	constexpr const_iterator cbegin() const noexcept
+	{
+		return data_;
+	}
+
+
+	constexpr iterator end() noexcept
+	{
+		return data_ + size_;
+	}
+
+	constexpr const_iterator end() const noexcept
+	{
+		return data_ + size_;
+	}
+
+	constexpr const_iterator cend() const noexcept
+	{
+		return data_ + size_;
+	}
+
+
+	constexpr reverse_iterator rbegin() noexcept
+	{
+		return reverse_iterator(end());
+	}
+
+	constexpr const_reverse_iterator rbegin() const noexcept
+	{
+		return const_reverse_iterator(end());
+	}
+
+	constexpr const_reverse_iterator crbegin() const noexcept
+	{
+		return const_reverse_iterator(end());
+	}
+
+
+	constexpr reverse_iterator rend() noexcept
+	{
+		return reverse_iterator(begin());
+	}
+
+	constexpr const_reverse_iterator rend() const noexcept
+	{
+		return const_reverse_iterator(begin());
+	}
+
+	constexpr const_reverse_iterator crend() const noexcept
+	{
+		return const_reverse_iterator(begin());
+	}
+
+
+
+	constexpr bool empty() const noexcept
+	{
+		return size_ == 0;
+	}
+
+	constexpr size_type size() const noexcept
 	{
 		return size_;
 	}
 
-	size_type capacity() const noexcept
+	void reserve(size_type new_capacity)
+	{
+		if (new_capacity <= capacity_)
+			return;
+
+		pointer new_data = static_cast<pointer>(::operator new(sizeof(value_type) * new_capacity));
+
+		size_type i{};
+		try
+		{
+			for (; i < size_; ++i)
+				::new (new_data + i) value_type(std::move_if_noexcept(data_[i]));
+		}
+		catch (...)
+		{
+			for (size_type j{}; j < i; ++j)
+				new_data[j].~value_type();
+			::operator delete(new_data);
+			throw;
+		}
+
+		for (size_type i{}; i < size_; ++i)
+			data_[i].~value_type();
+		::operator delete(data_);
+
+		data_ = new_data;
+		capacity_ = new_capacity;
+	}
+
+	constexpr size_type capacity() const noexcept
 	{
 		return capacity_;
 	}
 
-	bool empty() const noexcept
+	void shrink_to_fit()
 	{
-		return size_ == 0;
+		if (size_ == capacity_)
+			return;
+
+		pointer new_data = static_cast<pointer>(::operator new(sizeof(value_type) * size_));
+
+		size_type i{};
+		try
+		{
+			for (; i < size_; ++i)
+				::new (new_data + i) value_type(std::move_if_noexcept(data_[i]));
+		}
+		catch (...)
+		{
+			for (size_type j{}; j < i; ++j)
+				new_data[j].~value_type();
+			::operator delete(new_data);
+			throw;
+		}
+
+		for (size_type i{}; i < size_; ++i)
+			data_[i].~value_type();
+		::operator delete(data_);
+
+		data_ = new_data;
+		capacity_ = size_;
+	}
+
+
+
+	void clear()
+	{
+		for (size_type i{}; i < size_; ++i)
+			data_[i].~value_type();
+		size_ = 0;
 	}
 
 	void push_back(const_reference value)
@@ -203,33 +387,10 @@ public:
 		return data_[size_ - 1];
 	}
 
-	void reserve(size_type new_capacity)
+	void pop_back()
 	{
-		if (new_capacity <= capacity_)
-			return;
-
-		pointer new_data = static_cast<pointer>(::operator new(sizeof(value_type) * new_capacity));
-
-		size_type i{};
-		try
-		{
-			for (; i < size_; ++i)
-				::new (new_data + i) value_type(std::move_if_noexcept(data_[i]));
-		}
-		catch (...)
-		{
-			for (size_type j{}; j < i; ++j)
-				new_data[j].~value_type();
-			::operator delete(new_data);
-			throw;
-		}
-
-		for (size_type i{}; i < size_; ++i)
-			data_[i].~value_type();
-		::operator delete(data_);
-
-		data_ = new_data;
-		capacity_ = new_capacity;
+		--size_;
+		data_[size_].~value_type();
 	}
 
 	void resize(size_type new_size)
@@ -276,41 +437,5 @@ public:
 			::new (data_ + i) value_type(value);
 
 		size_ = new_size;
-	}
-
-	void clear()
-	{
-		for (size_type i{}; i < size_; ++i)
-			data_[i].~value_type();
-		size_ = 0;
-	}
-
-	void shrink_to_fit()
-	{
-		if (size_ == capacity_)
-			return;
-
-		pointer new_data = static_cast<pointer>(::operator new(sizeof(value_type) * size_));
-
-		size_type i{};
-		try
-		{
-			for (; i < size_; ++i)
-				::new (new_data + i) value_type(std::move_if_noexcept(data_[i]));
-		}
-		catch (...)
-		{
-			for (size_type j{}; j < i; ++j)
-				new_data[j].~value_type();
-			::operator delete(new_data);
-			throw;
-		}
-
-		for (size_type i{}; i < size_; ++i)
-			data_[i].~value_type();
-		::operator delete(data_);
-
-		data_ = new_data;
-		capacity_ = size_;
 	}
 };
