@@ -2,12 +2,12 @@
 
 A collection of STL-based implementations of fundamental data structures written in modern C++. The implementations are written for educational purposes and are tested using GoogleTest.
 
-The goal of this repository is to explore low-level aspects of C++ programming:
+The goal of this repository is to explore aspects of C++ programming:
 - manual memory management,
 - object lifetime,
 - move semantics,
 - exception safety,
-- generic programming,
+- template metaprogramming,
 - STL-like interfaces and design principles.
 - compile-time evaluation
 
